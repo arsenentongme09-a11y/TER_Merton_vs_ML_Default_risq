@@ -1,0 +1,41 @@
+name: Run and Compile Notebooks
+
+on:
+  push:
+      branches: [ main ]
+        pull_request:
+            branches: [ main ]
+              workflow_dispatch:
+
+              jobs:
+                run-notebooks:
+                    runs-on: ubuntu-latest
+
+                        steps:
+                              - name: Checkout repository
+                                      uses: actions/checkout@v4
+
+                                            - name: Set up Python
+                                                    uses: actions/setup-python@v5
+                                                            with:
+                                                                      python-version: '3.11'
+
+                                                                            - name: Install dependencies
+                                                                                    run: |
+                                                                                              pip install jupyter nbconvert nbformat
+                                                                                                        pip install numpy pandas matplotlib scipy scikit-learn
+                                                                                                        
+                                                                                                              - name: Run and convert notebooks to HTML
+                                                                                                                      run: |
+                                                                                                                                for nb in *.ipynb; do
+                                                                                                                                            echo "Running: $nb"
+                                                                                                                                                        jupyter nbconvert --to notebook --execute "$nb" --output "executed_${nb}" --ExecutePreprocessor.timeout=600 || echo "Warning: $nb failed to execute"
+                                                                                                                                                                    jupyter nbconvert --to html "executed_${nb}" --output "${nb%.ipynb}.html" || true
+                                                                                                                                                                              done
+                                                                                                                                                                              
+                                                                                                                                                                                    - name: Upload HTML outputs
+                                                                                                                                                                                            uses: actions/upload-artifact@v4
+                                                                                                                                                                                                    with:
+                                                                                                                                                                                                              name: notebooks-html
+                                                                                                                                                                                                                        path: "*.html"
+                                                                                                                                                                                                                                  if-no-files-found: warn
