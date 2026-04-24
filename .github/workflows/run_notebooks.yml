@@ -22,15 +22,30 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install jupyter nbconvert nbformat
+          pip install jupyter nbconvert nbformat ipykernel
           pip install numpy pandas matplotlib scipy scikit-learn
+          python -m ipykernel install --user --name python3 --display-name 'Python 3'
 
       - name: Run and convert notebooks to HTML
         run: |
+          shopt -s nullglob
           for nb in *.ipynb; do
             echo "Running: $nb"
-            jupyter nbconvert --to notebook --execute "$nb" --output "executed_nb.ipynb" --ExecutePreprocessor.timeout=600 || echo "Warning"
-            jupyter nbconvert --to html "executed_nb.ipynb" --output "output.html" || true
+            jupyter nbconvert --to notebook --execute "$nb" \
+              --output "executed_output.ipynb" \
+              --ExecutePreprocessor.timeout=600 \
+              --ExecutePreprocessor.kernel_name=python3 \
+              || echo "Warning: $nb failed to execute, converting without execution"
+            if [ -f executed_output.ipynb ]; then
+              safe_name=$(echo "$nb" | sed 's/[^a-zA-Z0-9._-]/_/g')
+              jupyter nbconvert --to html "executed_output.ipynb" \
+                --output "${safe_name%.ipynb}.html" || true
+              rm -f executed_output.ipynb
+            else
+              safe_name=$(echo "$nb" | sed 's/[^a-zA-Z0-9._-]/_/g')
+              jupyter nbconvert --to html "$nb" \
+                --output "${safe_name%.ipynb}.html" || true
+            fi
           done
 
       - name: Upload HTML outputs
