@@ -24,6 +24,7 @@ jobs:
         run: |
           pip install jupyter nbconvert nbformat ipykernel
           pip install numpy pandas matplotlib scipy scikit-learn
+          pip install seaborn imbalanced-learn
           python -m ipykernel install --user --name python3 --display-name 'Python 3'
 
       - name: Run and convert notebooks to HTML
